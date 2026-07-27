@@ -389,42 +389,37 @@ sudo fail2ban-client status sshd
 
 本プロジェクトの概念理解および構築において、以下の公式ドキュメントやリソースを参考にしました。
 
-### 仮想化とOS(Virtualization & OS)
+### 仮想化とOS
 
-- **Debian Administrator's Handbook**:https://debian-handbook.info/
-  Debianの基本思想やパッケージ管理(`apt`)の仕組みを理解するために参照しました。
+- **Debian Administrator's Handbook**:https://qiita.com/kanfutrooper/items/3feb56ccfe7f6101b833
+  Debianの基本思想やパッケージ管理(`apt`)の仕組みの理解
 
-- **ArchWiki - LVM**:https://wiki.archlinux.jp/index.php/LVM
-  LVM(論理ボリュームマネージャー)の概念と、物理ボリューム・論理ボリュームの構造を学ぶために非常に役立ちました。
+- **ArchWiki - LVM**:https://qiita.com/miyuki_samitani/items/ee3f93fa82d6ada1fa37
+  LVM(論理ボリュームマネージャー)の概念と、物理ボリューム・論理ボリュームの構造の理解
 
-### セキュリティとシステム管理(Security & System Admin)
+### セキュリティとシステム管理
 
-- **UFW Essentials(Ubuntu Community Help Wiki)**:https://help.ubuntu.com/community/UFW
-  UFWの基本的なポート開放とデフォルトルールの設定について参照しました。
+- **UFW Essentials**:https://qiita.com/010Ri/items/f37f7f5fb35265823c7c
+  UFWの基本的なポート開放とデフォルトルールの設定について
 
-- **Sudo Manual(`man sudoers`)**:https://www.sudo.ws/docs/man/sudoers.man/
-  `requiretty` や `passwd_tries` など、sudoの厳格なポリシー設定のために公式マニュアルを確認しました。
+- **Sudo Manual**:https://note.com/yutaworklife/n/n8ad6ab015cd0
+  `requiretty` や `passwd_tries` など、sudoの厳格なポリシー設定の確認
 
-- **Crontab Guru**:https://crontab.guru/
-  `monitoring.sh` を10分ごとに実行するためのcronスケジュールの構文(`*/10 * * * *`)を視覚的に検証するために使用しました。
+- **Crontab Guru**:https://qiita.com/nemutas/items/3f5816eabbf0eda5e6a9
+  `monitoring.sh` を10分ごとに実行するためのcronスケジュールの構文(`*/10 * * * *`)の書き方の確認
 
-### ボーナスパート(Bonus Part)
+### Bonus Part
 
-- **DigitalOcean - How To Install LEMP Stack**:https://www.digitalocean.com/community/tutorials/how-to-install-linux-nginx-mariadb-php-lemp-stack-on-debian-11
-  (※NginxはLighttpdに読み替えて活用)MariaDBとPHP(php-fpm)の連携設定の基礎として参照しました。
+- **DigitalOcean - How To Install LEMP Stack**:https://zenn.dev/ninomae42/articles/ddfb0cedd8122e
+  Lighttpd、MariaDBとPHP(php-fpm)の連携設定
 
-- **Fail2ban Official Wiki**:https://www.fail2ban.org/wiki/index.php/Manual
+- **systemctlコマンドについて**:https://qiita.com/wms2a4i1/items/04a1250229b12da33b87
+
+- **Fail2ban Official Wiki**:https://qiita.com/Brutus/items/28f4dc2054ad7de54e73
 
 ### AIツールの利用について(Usage of AI Tools)
 
-本プロジェクトでは、42の学習ガイドライン(AI Instructions)に基づき、AIを「コードや答えを直接出力させるツール」としてではなく、「概念を深く理解するためのパーソナルチューター」として活用しました。
-
-**活用したタスク:**
-
 1. MAC(強制アクセス制御)におけるAppArmorとSELinuxの仕組みの違いや、なぜ従来のDACだけでは不十分なのかという概念の理解
 2. LVMの階層構造や、パーティション暗号化(`crypt`)がどのレイヤーで機能しているかの図解的理解
-3. ピアレビュー時に想定される質問(例:「`apt` と `aptitude` の違いは?」)に対する、自分の理解度チェックと壁打ち相手として
-
-**プロジェクトのどの部分か:**
-
-必須パートの技術選定理由の言語化、および `monitoring.sh` で使用する `awk` や `grep` などのコマンドの振る舞いの理解に使用しました。直接的な設定ファイルのコピペは一切行わず、すべて自己の理解に基づき構築しています。
+3. ピアレビュー時に想定される質問(例:「`apt` と `aptitude` の違いは?」)に対する理解
+4. READEME.mdに関する内容のすり合わせ
