@@ -115,14 +115,14 @@ UTMはQEMUというオープンソースの仮想化技術をベースにした�
 
 ### 前提条件
 
-- 仮想化ソフト:**[VirtualBox / UTM]**
-- OSインストールメディア:**[Debian / Rocky Linux]** の公式ISOイメージ
+- 仮想化ソフト:**VirtualBox**
+- OSインストールメディア:**Debian** の公式ISOイメージ
 - 割り当てリソースの目安:CPU [1]コア、メモリ [2048]MB、ディスク [32]GB
 
 ### 1. 仮想マシンの作成
 
-1. [VirtualBox / UTM] を起動し、新規仮想マシンを作成する
-2. OSの種類として [Debian / Red Hat系] を選択する
+1. VirtualBoxを起動し、新規仮想マシンを作成する
+2. OSの種類として Debianを選択する
 3. メモリ・CPU・ディスク容量を上記の前提条件に沿って設定する
 4. ダウンロードした ISO イメージを仮想マシンに割り当てる
 
@@ -151,8 +151,8 @@ UTMはQEMUというオープンソースの仮想化技術をベースにした�
 
 1. パスワードポリシーの設定([libpam-pwquality] を使用し、有効期限・複雑さ要件などを設定)
 2. sudo の設定(試行回数制限、ログ記録などを `/etc/sudoers` に記載)
-3. ファイアウォールの設定(**[UFW / firewalld]** を使用し、必要なポートのみ許可)
-4. セキュリティ機構の有効化(**[AppArmor / SELinux]** が有効になっていることを確認)
+3. ファイアウォールの設定(**UFW** を使用し、必要なポートのみ許可)
+4. セキュリティ機構の有効化(**AppArmor** が有効になっていることを確認)
 5. SSHの設定(デフォルトポート [4242] に変更、root ログインを禁止)
 
 ### 4. 動作確認(ピアレビューの進行手順)
@@ -164,7 +164,12 @@ Born2beRootのピアレビューをスムーズに進行するための操作手
 評価開始時、VMを起動する前に、提出した `signature.txt` と現在の仮想ディスクのハッシュ値が一致するかを確認します。
 
 ```bash
+#ハッシュ値を計算するコマンド
 sha1sum ~/sgoinfre/born2beroot/[VM名].vdi
+
+#diffを使って、計算されたハッシュ値を比較するコマンド
+diff signature.txt <(shasum ~/VirtualBox\ VMs/あなたのVM名/あなたのVM名.vdi | awk '{print $1}')
+
 ```
 
 #### 2. 基本情報とOSの確認
@@ -255,3 +260,171 @@ sudo hostnamectl set-hostname new-hostname
 sudo nano /etc/hosts   # 127.0.1.1 のホスト名も書き換える
 sudo reboot
 ```
+
+### 9. ボーナスパートの検証(Bonus Part)
+
+#### 9.1. 追加パーティションの確認
+
+```bash
+lsblk
+```
+
+> 必須パートの要件に加え、`/var`, `/srv`, `/tmp`, `/var/log` などの論理ボリューム(LVM)が正しく分割・マウントされていることを示します。
+
+#### 9.2. WordPress環境の確認(lighttpd, MariaDB, PHP)
+
+**通信の流れ**
+
+ホストOS(自分のパソコン)のブラウザから見えているWordPressのサイトは、以下のような経路でVM内の各サービスが連携して表示されています。
+
+```
+ブラウザ(ホストOS)
+   ↓ http://localhost:8080 へアクセス
+VirtualBoxのポートフォワーディング(ホスト8080 → ゲスト80)
+   ↓
+lighttpd(Webサーバー。リクエストを受け取る)
+   ↓ PHPファイルの処理を依頼
+php-fpm(PHPの実行エンジン)
+   ↓ 記事データ・ユーザー情報などを取得
+MariaDB(データベース。WordPressの中身を保存)
+   ↓
+処理結果がlighttpd経由でブラウザに返され、ページが表示される
+```
+
+つまり、lighttpdが「受付」、php-fpmが「処理担当」、MariaDBが「データの保管庫」という役割分担になっており、この3つのサービスがすべて正常に動いていないと、WordPressのページは正しく表示されません。次のポート確認・サービス確認は、この経路のどこが動いているかを1つずつ確かめる作業になります。
+
+ポートの開放確認:
+
+```bash
+sudo ufw status
+```
+
+> HTTP通信用として `80/tcp`がALLOWになっていることを示します。これはブラウザからのリクエストがUFWを通過できることを確認する手順です。
+
+サービスの稼働状況の確認:
+
+```bash
+sudo systemctl status lighttpd
+sudo systemctl status mariadb
+sudo systemctl status php*-fpm
+```
+
+> 全てのサービスが `active (running)` になっていることを示します。上記の経路図の「受付」「処理担当」「保管庫」がすべて動いている状態です。
+
+ブラウザからのアクセス確認:
+
+ホストOS(自分のパソコン)のWebブラウザを開き、以下のURLにアクセスします。
+
+- ポートフォワーディングの場合:`http://localhost:8080`(設定したホスト側のポート)
+
+> WordPressのサイトが正常に表示されることを証明します。ここで表示が正しく行われるということは、上記の経路がすべて正常に機能していることの証明になります。
+
+#### 9.3. 追加サービス(Fail2ban)の確認
+
+**Fail2banとは**
+
+SSHへのログイン試行を監視し、一定回数以上パスワードを間違えたIPアドレスを、一定時間だけ自動的に接続禁止にする仕組みです。総当たり攻撃(ブルートフォース攻撃)への対策として動作します。
+
+サービスの稼働状況の確認:
+
+```bash
+sudo systemctl status fail2ban
+```
+
+監視状態(Jail)の確認:
+
+```bash
+sudo fail2ban-client status sshd
+```
+
+> SSHポートに対する監視が有効になっており、現在のブロック(Ban)リストなどが表示されることを説明します。これにより、無差別なSSH攻撃からサーバーを自動的に守る仕組みが機能しています。
+
+**一連の動作を実演する手順**
+
+実際にBanされる様子を見せることで、Fail2banが機能していることを証明できます。
+
+1. 別のターミナルから、わざと間違ったパスワードでSSH接続を、設定した上限回数分(例:3回)失敗させる
+
+```bash
+   ssh newuser@127.0.0.1 -p 4242
+   # パスワードを間違えて入力する(上限回数分繰り返す)
+```
+
+2. 上限回数を超えると接続自体が拒否されるようになる(以下のようなエラーが出る)
+
+```bash
+   ssh newuser@127.0.0.1 -p 4242
+   # ssh: connect to host 127.0.0.1 port 4242: Connection refused
+```
+
+3. Banされたことを確認する
+
+```bash
+   sudo fail2ban-client status sshd
+```
+
+   `Banned IP list` に、接続を試みたIPアドレス(`127.0.0.1`など)が表示されていれば、Banが成功している。
+
+4. Banを解除(unban)する
+
+```bash
+   sudo fail2ban-client set sshd unbanip 127.0.0.1
+```
+
+5. 解除されたことを確認する
+
+```bash
+   sudo fail2ban-client status sshd
+```
+
+   `Banned IP list` から該当IPが消えていれば、解除が完了している。
+
+6. 解除後、再度SSH接続できることを確認する
+
+```bash
+   ssh newuser@127.0.0.1 -p 4242
+```
+
+## Resources
+
+本プロジェクトの概念理解および構築において、以下の公式ドキュメントやリソースを参考にしました。
+
+### 仮想化とOS(Virtualization & OS)
+
+- **Debian Administrator's Handbook**:https://debian-handbook.info/
+  Debianの基本思想やパッケージ管理(`apt`)の仕組みを理解するために参照しました。
+
+- **ArchWiki - LVM**:https://wiki.archlinux.jp/index.php/LVM
+  LVM(論理ボリュームマネージャー)の概念と、物理ボリューム・論理ボリュームの構造を学ぶために非常に役立ちました。
+
+### セキュリティとシステム管理(Security & System Admin)
+
+- **UFW Essentials(Ubuntu Community Help Wiki)**:https://help.ubuntu.com/community/UFW
+  UFWの基本的なポート開放とデフォルトルールの設定について参照しました。
+
+- **Sudo Manual(`man sudoers`)**:https://www.sudo.ws/docs/man/sudoers.man/
+  `requiretty` や `passwd_tries` など、sudoの厳格なポリシー設定のために公式マニュアルを確認しました。
+
+- **Crontab Guru**:https://crontab.guru/
+  `monitoring.sh` を10分ごとに実行するためのcronスケジュールの構文(`*/10 * * * *`)を視覚的に検証するために使用しました。
+
+### ボーナスパート(Bonus Part)
+
+- **DigitalOcean - How To Install LEMP Stack**:https://www.digitalocean.com/community/tutorials/how-to-install-linux-nginx-mariadb-php-lemp-stack-on-debian-11
+  (※NginxはLighttpdに読み替えて活用)MariaDBとPHP(php-fpm)の連携設定の基礎として参照しました。
+
+- **Fail2ban Official Wiki**:https://www.fail2ban.org/wiki/index.php/Manual
+
+### AIツールの利用について(Usage of AI Tools)
+
+本プロジェクトでは、42の学習ガイドライン(AI Instructions)に基づき、AIを「コードや答えを直接出力させるツール」としてではなく、「概念を深く理解するためのパーソナルチューター」として活用しました。
+
+**活用したタスク:**
+
+1. MAC(強制アクセス制御)におけるAppArmorとSELinuxの仕組みの違いや、なぜ従来のDACだけでは不十分なのかという概念の理解
+2. LVMの階層構造や、パーティション暗号化(`crypt`)がどのレイヤーで機能しているかの図解的理解
+3. ピアレビュー時に想定される質問(例:「`apt` と `aptitude` の違いは?」)に対する、自分の理解度チェックと壁打ち相手として
+
+**プロジェクトのどの部分か:**
+
+必須パートの技術選定理由の言語化、および `monitoring.sh` で使用する `awk` や `grep` などのコマンドの振る舞いの理解に使用しました。直接的な設定ファイルのコピペは一切行わず、すべて自己の理解に基づき構築しています。
