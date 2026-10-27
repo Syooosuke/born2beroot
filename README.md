@@ -163,33 +163,33 @@ Born2beRootのピアレビューをスムーズに進行するための操作手
 
 評価開始時、**VMを起動する前に**、提出した `signature.txt` と現在の仮想ディスク(`.vdi`)のハッシュ値が一致するかを確認します。VMを一度でも起動すると `.vdi` の中身が変わり、ハッシュ値も変わってしまうため、必ず起動前に行います。
 
-仮想ディスクの保存場所: `~/sgoinfre/born2beroot/[VM名].vdi`
+仮想ディスクの保存場所: `/sgoinfre/syokota/born2beroot2/syokota42/syokota42.vdi`
 
 ```bash
 # 仮想ディスクのハッシュ値(SHA-1)を計算する
-sha1sum ~/sgoinfre/born2beroot/[VM名].vdi
+sha1sum /sgoinfre/syokota/born2beroot2/syokota42/syokota42.vdi
 
 # signature.txt と比較する(何も表示されなければ一致)
-diff signature.txt <(sha1sum ~/sgoinfre/born2beroot/[VM名].vdi | awk '{print $1}')
+diff signature.txt <(sha1sum /sgoinfre/syokota/born2beroot2/syokota42/syokota42.vdi | awk '{print $1}')
 ```
 
 ハッシュ値の一致を確認したら、スナップショットが存在しないことを確認し、評価用のスナップショットを作成してからVMを起動します。
 
 ```bash
 # スナップショットが存在しないことを確認
-VBoxManage snapshot "[VM名]" list
+VBoxManage snapshot "syokota42.vdi" list
 
 # 評価用のスナップショットを作成してから起動
-VBoxManage snapshot "[VM名]" take eval
-VBoxManage startvm "[VM名]"
+VBoxManage snapshot "syokota42.vdi" take eval
+VBoxManage startvm "syokota42.vdi"
 ```
 
 評価終了後は、VMをシャットダウンしてからスナップショットを復元・削除し、ハッシュ値が提出時から変わっていないことを確認します。
 
 ```bash
-VBoxManage snapshot "[VM名]" restore eval
-VBoxManage snapshot "[VM名]" delete eval
-sha1sum ~/sgoinfre/born2beroot/[VM名].vdi
+VBoxManage snapshot "syokota42.vdi" restore eval
+VBoxManage snapshot "syokota42.vdi" delete eval
+sha1sum /sgoinfre/syokota/born2beroot2/syokota42/syokota42.vdi
 ```
 
 #### 2. 基本情報とOSの確認
