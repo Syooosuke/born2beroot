@@ -316,9 +316,8 @@ sudo crontab -l                 # → */10 * * * * /usr/local/bin/monitoring.sh
 sudo crontab -e                 # */10 を * に変更して保存
 #  → 1分ごとにブロードキャストが表示されることを確認
 sudo crontab -e                 # * を */10 に戻す
-# スクリプトの定期実行を停止する
-sudo systemctl stop cron
 
+# スクリプトの定期実行を停止する
 sudo systemctl stop cron        # 今動いている cron を止める
 sudo systemctl disable cron     # 起動時に cron が自動起動しないようにする
 sudo reboot
