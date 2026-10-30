@@ -255,7 +255,6 @@ sudo cat /etc/sudoers.d/sudo_config
 
 # ログフォルダとファイルの確認
 sudo ls -R /var/log/sudo/ | head
-sudo grep -E "logfile|iolog" /etc/sudoers       # ログのファイル名を確認
 sudo cat /var/log/sudo/sudo.log                 # ↑で確認したファイル名に読み替え
 
 # 3回失敗のテスト
