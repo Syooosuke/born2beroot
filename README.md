@@ -439,7 +439,7 @@ sudo fail2ban-client status sshd
 4. Banを解除(unban)する
 
 ```bash
-   sudo fail2ban-client set sshd unbanip 127.0.0.1
+  sudo fail2ban-client set sshd unbanip 10.0.2.2
 ```
 
 5. 解除されたことを確認する
