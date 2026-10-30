@@ -376,7 +376,7 @@ sudo ufw status
 ```bash
 sudo systemctl status lighttpd
 sudo systemctl status mariadb
-sudo systemctl status php*-fpm
+sudo systemctl status php8.4-fpm
 ```
 
 > 全てのサービスが `active (running)` になっていることを示します。上記の経路図の「受付」「処理担当」「保管庫」がすべて動いている状態です。
