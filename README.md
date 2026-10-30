@@ -255,7 +255,7 @@ sudo cat /etc/sudoers.d/sudo_config
 
 # ログフォルダとファイルの確認
 sudo ls -R /var/log/sudo/ | head
-sudo cat /var/log/sudo/sudo.log                 # ↑で確認したファイル名に読み替え
+sudo cat /var/log/sudo/sudo.log 
 
 # 3回失敗のテスト
 su - evaluser
