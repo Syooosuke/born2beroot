@@ -155,9 +155,9 @@ UTMはQEMUというオープンソースの仮想化技術をベースにした�
 4. セキュリティ機構の有効化(**AppArmor** が有効になっていることを確認)
 5. SSHの設定(デフォルトポート [4242] に変更、root ログインを禁止)
 
-### 4. 動作確認(ピアレビューの進行手順)
+### 4. 動作確認
 
-Born2beRootのピアレビューをスムーズに進行するための操作手順は以下の通りです。
+Born2beRootのピアレビューを進行するための操作手順は以下の通りです。
 
 #### 1. 事前準備(ハッシュの確認とスナップショット)
 
@@ -174,23 +174,6 @@ diff signature.txt <(sha1sum /sgoinfre/syokota/born2beroot2/syokota42/syokota42.
 ```
 
 ハッシュ値の一致を確認したら、スナップショットが存在しないことを確認し、評価用のスナップショットを作成してからVMを起動します。
-
-```bash
-# スナップショットが存在しないことを確認
-VBoxManage snapshot "syokota42.vdi" list
-
-# 評価用のスナップショットを作成してから起動
-VBoxManage snapshot "syokota42.vdi" take eval
-VBoxManage startvm "syokota42.vdi"
-```
-
-評価終了後は、VMをシャットダウンしてからスナップショットを復元・削除し、ハッシュ値が提出時から変わっていないことを確認します。
-
-```bash
-VBoxManage snapshot "syokota42.vdi" restore eval
-VBoxManage snapshot "syokota42.vdi" delete eval
-sha1sum /sgoinfre/syokota/born2beroot2/syokota42/syokota42.vdi
-```
 
 #### 2. 基本情報とOSの確認
 
