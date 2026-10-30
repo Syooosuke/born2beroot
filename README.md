@@ -202,75 +202,136 @@ sudo aa-status
 ```bash
 # 現在のユーザーが所属しているグループの確認
 groups
+getent group user42
 
 # 新規ユーザーの作成とパスワードポリシーの証明
-sudo adduser newuser
+sudo adduser evaluser
 # 簡単なパスワードを入れて弾かれることを確認する
 
+# パスワードの期限設定が適用されていること
+sudo chage -l evaluser          # → 最大30日、最小2日、警告7日
+
+# 設定した2つのファイルを見せる
+grep "^PASS" /etc/login.defs
+grep -v "^#" /etc/security/pwquality.conf | grep -v "^$"
+
 # 作成したユーザーをグループに追加
-sudo usermod -aG evaluatinggroup newuser
-getent group evaluatinggroup
+sudo groupadd evaluating
+sudo usermod -aG evaluating evaluser
+getent group evaluating
 ```
 
-#### 4. UFW(ファイアウォール)とSSHの確認
+#### 4. ホスト名とパーティション
+```bash
+hostname
+
+# 評価者のログイン名に変更
+sudo hostnamectl set-hostname taro42
+sudo nano /etc/hosts                            # 127.0.1.1 の行も taro42 に書き換え
+sudo reboot
+
+# 再起動後（パスフレーズ入力 → ログイン）
+hostname                                        # → taro42
+
+# 元に戻す
+sudo hostnamectl set-hostname syokota42
+sudo nano /etc/hosts                            # 127.0.1.1 の行を syokota42 に戻す
+sudo reboot
+
+# パーティションの表示
+lsblk
+```
+#### 5. sudo
+```bash
+# sudo がインストールされていること
+dpkg -l | grep sudo
+
+# 新しいユーザーを sudo グループに追加
+sudo usermod -aG sudo evaluser
+getent group sudo
+
+# sudo の設定を見せる
+sudo cat /etc/sudoers
+sudo ls /etc/sudoers.d/                         # 設定をこちらに書いている場合
+
+# ログフォルダとファイルの確認
+sudo ls -R /var/log/sudo/ | head
+sudo grep -E "logfile|iolog" /etc/sudoers       # ログのファイル名を確認
+sudo cat /var/log/sudo/sudo.log                 # ↑で確認したファイル名に読み替え
+
+# 3回失敗のテスト
+su - evaluser
+sudo ls          # わざと3回間違える → 独自メッセージ → "3 incorrect password attempts"
+exit
+
+# sudo を1回実行して、ログが更新されることを確認
+sudo ls /
+sudo tail -n 5 /var/log/sudo/sudo.log           # 今のコマンドが追記されている
+```
+
+#### 6. UFW(ファイアウォール)とSSHの確認
 
 ```bash
-# UFWのステータス確認
-sudo ufw status
+sudo ufw status numbered        # 4242 がある
+
+sudo ufw allow 8080
+sudo ufw status numbered       
+
+sudo ufw delete allow 8080      # IPv4・IPv6 の両方が一度に消える
+sudo ufw status numbered       
 
 # ホストOSからのSSH接続テスト
 ssh newuser@127.0.0.1 -p 4242
 ```
 
-#### 5. パスワードポリシーの確認
+#### 7. SSH接続
 
 ```bash
-# パスワードの有効期限ルールの確認
-sudo cat /etc/login.defs | grep PASS
+# 【VM内】
+sudo systemctl status ssh                               # active (running)
+sudo ss -tunlp | grep ssh                               # 4242 だけ
+sudo grep -E "^Port|^PermitRootLogin" /etc/ssh/sshd_config
+#  → Port 4242
+#  → PermitRootLogin no
 
-# パスワードの複雑さルールの確認
-sudo cat /etc/security/pwquality.conf
-
-# ユーザーへのポリシー適用確認
-sudo chage -l root
-```
-
-#### 6. sudoの設定とログの確認
-
-```bash
-# sudoのルール設定の確認
-sudo cat /etc/sudoers
-
-# sudoの失敗テストとログの確認
-su - newuser
-sudo ls   # わざと間違ったパスワードを3回入力する
+# 【ホストOSの別ターミナル】
+ssh evaluser@127.0.0.1 -p 4242      # ログインできる
 exit
+ssh root@127.0.0.1 -p 4242          # → Permission denied
 
-# ログファイルの中身を確認
-sudo cat /var/log/sudo/00/00/01/log
+#rootログイン失敗時(Fail2ban)
+sudo fail2ban-client set sshd unbanip 127.0.0.1
 ```
 
-#### 7. monitoring.sh と cron
+#### 8. monitoring.sh と cron
 
 ```bash
-# スクリプトの動作確認
-sudo /usr/local/bin/monitoring.sh
+# スクリプトの中身と、権限・ハッシュを記録しておく（再起動後の比較用）
+sudo cat /usr/local/bin/monitoring.sh
+ls -l /usr/local/bin/monitoring.sh
+sudo sha1sum /usr/local/bin/monitoring.sh
 
-# cronの設定確認とスケジュール変更
-sudo crontab -l
-sudo crontab -e
-# */10 を * に変更して保存し、wallメッセージが表示されるか確認する
+# cron の設定を見せる
+sudo crontab -l                 # → */10 * * * * /usr/local/bin/monitoring.sh
 
+# 毎分実行に変更
+sudo crontab -e                 # */10 を * に変更して保存
+#  → 1分ごとにブロードキャストが表示されることを確認
+sudo crontab -e                 # * を */10 に戻す
 # スクリプトの定期実行を停止する
 sudo systemctl stop cron
-```
 
-#### 8. ホスト名の変更
-
-```bash
-sudo hostnamectl set-hostname new-hostname
-sudo nano /etc/hosts   # 127.0.1.1 のホスト名も書き換える
+sudo systemctl stop cron        # 今動いている cron を止める
+sudo systemctl disable cron     # 起動時に cron が自動起動しないようにする
 sudo reboot
+
+# 再起動後
+sudo systemctl status cron                  # → inactive (dead) / disabled
+ls -l /usr/local/bin/monitoring.sh          # 権限が同じ
+sudo sha1sum /usr/local/bin/monitoring.sh   # ハッシュが同じ ＝ 改変していない
+
+# 元に戻す
+sudo systemctl enable --now cron
 ```
 
 ### 9. ボーナスパートの検証(Bonus Part)
