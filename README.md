@@ -178,11 +178,20 @@ diff signature.txt <(sha1sum /sgoinfre/syokota/born2beroot2/syokota42/syokota42.
 #### 2. 基本情報とOSの確認
 
 ```bash
+# GUI（グラフィックサーバー）が入っていないこと → 何も表示されなければOK
+dpkg -l | grep -E "xorg|xserver|wayland"
+
 # OSバージョン、アーキテクチャ、カーネルの確認
 hostnamectl
 
 # ディスクのパーティションとLVMの確認
 lsblk
+
+# UFWが動いていること
+sudo ufw status
+
+# SSHが動いていること
+sudo systemctl status ssh
 
 # AppArmorの動作確認
 sudo aa-status
