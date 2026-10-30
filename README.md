@@ -330,6 +330,7 @@ sudo sha1sum /usr/local/bin/monitoring.sh   # ハッシュが同じ ＝ 改変�
 # 元に戻す
 sudo systemctl enable --now cron
 ```
+>Debian 13 では /run/utmp がなく wall が SSH に届かないため、who で端末を調べて直接書き込んでいます。
 
 ### 9. ボーナスパートの検証(Bonus Part)
 
