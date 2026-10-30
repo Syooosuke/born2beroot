@@ -251,8 +251,7 @@ sudo usermod -aG sudo evaluser
 getent group sudo
 
 # sudo の設定を見せる
-sudo cat /etc/sudoers
-sudo ls /etc/sudoers.d/                         # 設定をこちらに書いている場合
+sudo cat /etc/sudoers.d/sudo_config
 
 # ログフォルダとファイルの確認
 sudo ls -R /var/log/sudo/ | head
